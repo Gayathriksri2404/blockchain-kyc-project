@@ -113,9 +113,9 @@ def create_block(kyc_hash):
 
 
 # ================= HOME =================
-@app.route("/")
+@app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template("dashboard.html")
 
 
 # ================= BANK LOGIN =================
