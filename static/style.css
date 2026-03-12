@@ -1,0 +1,208 @@
+/* ===== BLOCKCHAIN NETWORK BACKGROUND ===== */
+
+#network{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:-2;
+background:#060e12;
+}
+
+/* ===== GLOBAL BODY ===== */
+
+body{
+margin:0;
+font-family:'Poppins', sans-serif;
+color:white;
+min-height:100vh;
+overflow-x:hidden;
+
+background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+background-size:400% 400%;
+animation:gradientBG 15s ease infinite;
+}
+
+/* animated gradient */
+
+@keyframes gradientBG{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+/* glowing background lights */
+
+body::before{
+content:"";
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:
+radial-gradient(circle at 20% 30%, rgba(0,255,255,0.15), transparent 40%),
+radial-gradient(circle at 80% 70%, rgba(0,150,255,0.15), transparent 40%);
+z-index:-1;
+pointer-events:none;
+}
+
+/* ===== TEXT ===== */
+
+h1{
+color:#4db8ff;
+letter-spacing:1px;
+}
+
+h2{
+color:#a6d8ff;
+}
+
+p{
+font-size:18px;
+}
+
+/* ===== NAVBAR ===== */
+
+.navbar{
+position:relative;
+z-index:1;
+background:rgba(0,0,0,0.55);
+text-align:center;
+padding:22px;
+font-size:24px;
+letter-spacing:1px;
+box-shadow:0 6px 20px rgba(0,0,0,0.6);
+backdrop-filter:blur(8px);
+}
+
+/* ===== DASHBOARD CONTAINER ===== */
+
+.dashboard-container{
+position:relative;
+z-index:1;
+width:90%;
+margin:auto;
+margin-top:40px;
+}
+
+/* ===== STATS SECTION ===== */
+
+.stats-container{
+display:flex;
+justify-content:space-between;
+gap:25px;
+margin-bottom:50px;
+flex-wrap:wrap;
+}
+
+/* ===== STAT CARDS ===== */
+
+.stat-card{
+flex:1;
+min-width:250px;
+padding:35px;
+border-radius:18px;
+text-align:center;
+color:white;
+font-weight:bold;
+text-decoration:none;
+
+backdrop-filter:blur(10px);
+
+box-shadow:
+0 10px 30px rgba(0,0,0,0.5),
+inset 0 0 15px rgba(255,255,255,0.05);
+
+transition:all 0.35s ease;
+cursor:pointer;
+}
+
+/* card colors */
+
+.stat-card:nth-child(1){
+background:linear-gradient(135deg,#36d1dc,#5b86e5);
+}
+
+.stat-card:nth-child(2){
+background:linear-gradient(135deg,#11998e,#38ef7d);
+}
+
+.stat-card:nth-child(3){
+background:linear-gradient(135deg,#ff9966,#ff5e62);
+}
+
+/* card text */
+
+.stat-card h3{
+font-size:19px;
+margin-bottom:12px;
+}
+
+.stat-card p{
+font-size:42px;
+}
+
+/* card hover */
+
+.stat-card:hover{
+transform:translateY(-10px) scale(1.04);
+box-shadow:
+0 20px 40px rgba(0,0,0,0.7),
+0 0 25px rgba(0,255,255,0.4);
+}
+
+/* ===== ACTION BUTTON AREA ===== */
+
+.action-container{
+display:flex;
+justify-content:center;
+flex-wrap:wrap;
+gap:25px;
+}
+
+/* ===== BUTTON STYLE ===== */
+
+.action-container button{
+
+width:230px;
+height:65px;
+
+border:none;
+border-radius:14px;
+
+background:rgba(255,255,255,0.12);
+color:white;
+
+font-size:16px;
+font-weight:bold;
+
+cursor:pointer;
+
+backdrop-filter:blur(10px);
+
+box-shadow:0 6px 18px rgba(0,0,0,0.4);
+
+transition:all 0.35s ease;
+}
+
+/* button hover */
+
+.action-container button:hover{
+
+transform:translateY(-6px) scale(1.05);
+background:#1abc9c;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,0.6),
+0 0 15px rgba(26,188,156,0.8);
+}
+
+
+
+
+
+
+
+

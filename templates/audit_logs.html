@@ -1,0 +1,28 @@
+<h2>KYC Audit Logs</h2>
+
+
+<table border="1">
+
+<tr>
+<th>Bank</th>
+<th>Action</th>
+<th>KYC Hash</th>
+<th>Time</th>
+</tr>
+
+{% for log in logs %}
+
+<tr>
+<td>{{log.bank}}</td>
+<td>{{log.action}}</td>
+<td>{{log.kyc_hash}}</td>
+<td>{{log.time}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<a href="{{ url_for('dashboard') }}">
+<button>⬅ Back to Dashboard</button>
+</a>

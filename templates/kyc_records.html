@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KYC Records</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: white;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #00c6ff;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+        }
+        tr:nth-child(even) {
+            background: rgba(255,255,255,0.05);
+        }
+        a.button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>All KYC Records</h2>
+    <table>
+        <tr>
+            {% if kyc_records %}
+                {% for key in kyc_records[0].keys() %}
+                <th>{{ key }}</th>
+                {% endfor %}
+            {% else %}
+                <th>No records found</th>
+            {% endif %}
+        </tr>
+        {% for record in kyc_records %}
+        <tr>
+            {% for value in record.values() %}
+            <td>{{ value }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <a class="button" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+</body>
+</html>

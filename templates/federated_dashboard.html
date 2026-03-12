@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Federated Learning Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family: Arial;
+background:#1e1e1e;
+color:white;
+text-align:center;
+}
+
+/* Back button */
+.back-btn{
+background:#00aa88;
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+margin-bottom:20px;
+}
+
+.back-btn:hover{
+background:#009977;
+}
+
+.bank-box{
+display:inline-block;
+width:130px;
+height:60px;
+margin:10px;
+background:#444;
+line-height:60px;
+border-radius:8px;
+font-weight:bold;
+}
+
+#server{
+width:200px;
+height:70px;
+background:#0077ff;
+margin:30px auto;
+line-height:70px;
+border-radius:8px;
+font-weight:bold;
+}
+
+#weightBox{
+position:absolute;
+background:#1e1e1e;
+color:white;
+border:1px solid #00ff88;
+padding:10px 15px;
+border-radius:8px;
+display:none;
+font-size:14px;
+box-shadow:0 0 10px rgba(0,255,120,0.5);
+}
+
+.back-btn{
+position:absolute;
+top:20px;
+left:20px;
+background:#00aa88;
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.back-btn:hover{
+background:#009977;
+}
+
+</style>
+</head>
+
+<body>
+
+<a href="{{ url_for('dashboard') }}">
+<button class="back-btn">⬅ Back to Dashboard</button>
+</a>
+
+<h2>Federated Learning Between Banks</h2>
+
+<div id="clients">
+
+{% for client in clients %}
+<div class="bank-box" id="{{client|replace(' ','_')}}">{{client}}</div>
+{% endfor %}
+
+</div>
+
+<div id="server">Central Server</div>
+<p style="margin-top:10px;font-weight:bold;color:#00ff88;">
+Model Aggregation
+</p>
+
+<canvas id="chart" width="600" height="300" style="margin-top:40px;"></canvas>
+
+<div id="weightBox"></div>
+
+<script>
+
+const ctx = document.getElementById('chart').getContext('2d');
+
+const chart = new Chart(ctx,{
+type:'line',
+data:{
+labels:[],
+datasets:[{
+label:'Global Model Accuracy',
+data:[],
+borderColor:'lime',
+tension:0
+}]
+}
+});
+
+let clientWeightsPerRound = {};
+let round=1;
+
+function runRound(){
+
+fetch(`/fl_round/${round}`)
+.then(res=>res.json())
+.then(data=>{
+
+clientWeightsPerRound[round] = data.client_updates;
+
+/* Highlight banks */
+for(const client in data.client_updates){
+
+let box=document.getElementById(client.replace(" ","_"));
+
+box.style.background="orange";
+
+setTimeout(()=>{
+box.style.background="#444";
+},500);
+
+}
+
+/* Server aggregation animation */
+
+let server=document.getElementById("server");
+
+server.style.background="green";
+
+setTimeout(()=>{
+server.style.background="#0077ff";
+},500);
+
+/* Update chart */
+
+chart.data.labels.push("Round "+round);
+
+chart.data.datasets[0].data.push(data.global_model);
+
+chart.update();
+
+round++;
+
+if(round<=10){
+setTimeout(runRound,1500);
+}
+
+});
+
+}
+
+runRound();
+
+
+/* Click chart to see bank weights */
+
+document.getElementById("chart").onclick = function(evt){
+
+const points = chart.getElementsAtEventForMode(evt,'nearest',{intersect:true},true);
+
+if(points.length){
+
+let index = points[0].index;
+let roundNumber = index + 1;
+
+let weights = clientWeightsPerRound[roundNumber];
+
+let text = "<b>Round "+roundNumber+"</b><br><br>";
+
+for(let client in weights){
+text += client + " : " + weights[client].toFixed(2) + "<br>";
+}
+
+let box = document.getElementById("weightBox");
+
+box.innerHTML = text;
+box.style.left = evt.pageX + "px";
+box.style.top = evt.pageY + "px";
+box.style.display = "block";
+
+}
+
+};
+
+</script>
+
+</body>
+</html>

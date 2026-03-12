@@ -1,0 +1,14 @@
+Project Type: Web-based Application
+
+Frontend: HTML, CSS, JavaScript
+Backend: Python (Flask)
+Blockchain: Ethereum (Ganache / Local Blockchain)
+Smart Contracts: Solidity
+Machine Learning: Python (Federated Learning – basic simulation)
+Database: SQLite (for local bank data)
+
+Modules:
+- Customer Module
+- Bank Module
+- Blockchain Network Module
+- Federated Learning Module
