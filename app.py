@@ -7,18 +7,26 @@ import os
 import re
 from federated import federated_aggregate
 from werkzeug.utils import secure_filename
-from pyngrok import ngrok
-from pyngrok import ngrok, conf
+from pymongo import MongoClient
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-BLOCKCHAIN_FILE = "blockchain.json"
-KYC_FILE = "kyc_data.json"
-AUDIT_FILE = "audit_log.json"
+# ================= MONGODB CONNECTION =================
+client = MongoClient("mongodb+srv://kycuser:kyc12345@cluster0.zgrfbcg.mongodb.net/?appName=Cluster0")
+
+db = client["kyc_database"]
+
+kyc_collection = db["kyc_data"]
+blockchain_collection = db["blockchain"]
+audit_collection = db["audit_logs"]
+activity_collection = db["activity_logs"]
+
+
+
 UPLOAD_FOLDER = "static/uploads"
 clients = ['Bank A', 'Bank B', 'Bank C']
-ACTIVITY_FILE = "activity_log.json"
+
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -52,11 +60,7 @@ def get_next_user_folder():
 # BLOCKCHAIN FUNCTIONS
 # =====================================================
 def load_blockchain():
-    if os.path.exists(BLOCKCHAIN_FILE):
-        with open(BLOCKCHAIN_FILE, "r", encoding="utf-8") as f:
-            chain = json.load(f)
-    else:
-        chain = []
+    chain = list(blockchain_collection.find({}, {"_id":0}))
     if len(chain) == 0:
         genesis_block = {
             "index": 1,
@@ -71,26 +75,20 @@ def load_blockchain():
 
 
 def save_blockchain(chain):
-    with open(BLOCKCHAIN_FILE, "w", encoding="utf-8") as f:
-        json.dump(chain, f, indent=4)
+    blockchain_collection.delete_many({})
+    blockchain_collection.insert_many(chain)
 
 
 # =====================================================
 # KYC DATA
 # =====================================================
 def load_kyc():
-    if os.path.exists(KYC_FILE):
-        with open(KYC_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+    records = list(kyc_collection.find({}, {"_id":0}))
+    return records
 
 
 def store_kyc(data):
-    existing = load_kyc()
-    existing.append(data)
-    with open(KYC_FILE, "w", encoding="utf-8") as f:
-        json.dump(existing, f, indent=4)
-
+    kyc_collection.insert_one(data)
 
 # =====================================================
 # CREATE BLOCK
@@ -154,8 +152,7 @@ def kyc_records_table():
     log_activity("Viewed KYC records")
 
     try:
-        with open('kyc_data.json', 'r') as f:
-            kyc_records = json.load(f)
+        kyc_records = list(kyc_collection.find({}, {"_id":0}))
     except:
         kyc_records = []
 
@@ -289,45 +286,33 @@ def view_chain():
 
 
 # ================= AUDIT LOG =================
-def log_action(bank,action,kyc_hash):
-    if os.path.exists(AUDIT_FILE):
-        with open(AUDIT_FILE,"r") as f:
-            logs=json.load(f)
-    else:
-        logs=[]
-    log={
-        "bank":bank,
-        "action":action,
-        "kyc_hash":kyc_hash,
-        "time":str(datetime.datetime.now())
+def log_action(bank, action, kyc_hash):
+
+    log = {
+        "bank": bank,
+        "action": action,
+        "kyc_hash": kyc_hash,
+        "time": str(datetime.datetime.now())
     }
-    logs.append(log)
-    with open(AUDIT_FILE,"w") as f:
-        json.dump(logs,f,indent=4)
+
+    audit_collection.insert_one(log)
+
+
+
+    
 
 
 
 
 # ================= ACTIVITY LOG =================
 def log_activity(action):
-    if os.path.exists(ACTIVITY_FILE):
-        try:
-            with open(ACTIVITY_FILE, "r") as f:
-                activities = json.load(f)
-        except:
-            activities = []
-    else:
-        activities = []
 
     activity = {
         "action": action,
         "time": str(datetime.datetime.now())
     }
 
-    activities.append(activity)
-
-    with open(ACTIVITY_FILE, "w") as f:
-        json.dump(activities, f, indent=4)
+    activity_collection.insert_one(activity)
 
 
 # ================= FEDERATED =================
@@ -341,11 +326,8 @@ def federated():
 @app.route("/audit_logs")
 def audit_logs():
     log_activity("Viewed Audit Logs")
-    if os.path.exists(AUDIT_FILE):
-        with open(AUDIT_FILE, "r") as f:
-            logs = json.load(f)
-    else:
-        logs = []
+    logs = list(audit_collection.find({}, {"_id":0}))
+
     return render_template("audit_logs.html", logs=logs)
 
 
@@ -359,26 +341,12 @@ def dashboard():
     kyc_data = load_kyc()
     blockchain = load_blockchain()
 
-    if os.path.exists(AUDIT_FILE):
-        try:
-            with open(AUDIT_FILE) as f:
-                logs = json.load(f)
-        except:
-            logs = []
-    else:
-        logs = []
+    logs = list(audit_collection.find({}, {"_id":0}))
 
     # LOAD ACTIVITY LOG
-    if os.path.exists(ACTIVITY_FILE):
-        try:
-            with open(ACTIVITY_FILE) as f:
-               activities = json.load(f)
-        except:
-            activities = []
-    else:
-        activities = []
-
-    recent_activity = activities[-5:]
+    activities = list(activity_collection.find({}, {"_id":0}).sort("time",-1))
+recent_activity = activities[:5]
+    
 
     return render_template(
         "dashboard.html",

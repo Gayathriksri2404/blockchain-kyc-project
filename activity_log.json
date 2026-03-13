@@ -54,5 +54,37 @@
     {
         "action": "Viewed KYC records",
         "time": "2026-03-11 22:45:02.888656"
+    },
+    {
+        "action": "Opened Create KYC Page",
+        "time": "2026-03-13 08:57:41.524153"
+    },
+    {
+        "action": "Opened Create KYC Page",
+        "time": "2026-03-13 08:58:22.412469"
+    },
+    {
+        "action": "New KYC Record Created",
+        "time": "2026-03-13 08:58:22.479327"
+    },
+    {
+        "action": "Opened Verify KYC Page",
+        "time": "2026-03-13 08:59:10.781687"
+    },
+    {
+        "action": "Opened Verify KYC Page",
+        "time": "2026-03-13 08:59:20.716348"
+    },
+    {
+        "action": "Viewed KYC records",
+        "time": "2026-03-13 08:59:34.371426"
+    },
+    {
+        "action": "Viewed Blockchain Blocks",
+        "time": "2026-03-13 09:00:07.319171"
+    },
+    {
+        "action": "Viewed Audit Logs",
+        "time": "2026-03-13 09:00:18.468536"
     }
 ]
