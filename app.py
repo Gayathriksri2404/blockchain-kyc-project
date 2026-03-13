@@ -8,6 +8,7 @@ import re
 from federated import federated_aggregate
 from werkzeug.utils import secure_filename
 from pymongo import MongoClient
+import pytz  # Added for IST timezone
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -22,15 +23,16 @@ blockchain_collection = db["blockchain"]
 audit_collection = db["audit_logs"]
 activity_collection = db["activity_logs"]
 
-
-
 UPLOAD_FOLDER = "static/uploads"
 clients = ['Bank A', 'Bank B', 'Bank C']
-
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+# ================= IST TIMESTAMP HELPER =================
+def get_ist_timestamp():
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
 
 # =====================================================
 # USER INDEX FOLDER HELPER
@@ -55,7 +57,6 @@ def get_next_user_folder():
     os.makedirs(user_folder, exist_ok=True)
     return user_folder_name, user_folder
 
-
 # =====================================================
 # BLOCKCHAIN FUNCTIONS
 # =====================================================
@@ -64,7 +65,7 @@ def load_blockchain():
     if len(chain) == 0:
         genesis_block = {
             "index": 1,
-            "timestamp": str(datetime.datetime.now()),
+            "timestamp": get_ist_timestamp(),
             "kyc_hash": "GENESIS",
             "previous_hash": "0",
             "hash": "GENESIS_HASH"
@@ -73,11 +74,9 @@ def load_blockchain():
         save_blockchain(chain)
     return chain
 
-
 def save_blockchain(chain):
     blockchain_collection.delete_many({})
     blockchain_collection.insert_many(chain)
-
 
 # =====================================================
 # KYC DATA
@@ -85,7 +84,6 @@ def save_blockchain(chain):
 def load_kyc():
     records = list(kyc_collection.find({}, {"_id":0}))
     return records
-
 
 def store_kyc(data):
     kyc_collection.insert_one(data)
@@ -97,11 +95,11 @@ def create_block(kyc_hash):
     blockchain = load_blockchain()
     previous_block = blockchain[-1]
     previous_hash = previous_block["hash"]
-    block_string = str(len(blockchain)+1) + str(datetime.datetime.now()) + kyc_hash + previous_hash
+    block_string = str(len(blockchain)+1) + get_ist_timestamp() + kyc_hash + previous_hash
     block_hash = hashlib.sha256(block_string.encode()).hexdigest()
     block = {
         "index": len(blockchain) + 1,
-        "timestamp": str(datetime.datetime.now()),
+        "timestamp": get_ist_timestamp(),
         "kyc_hash": kyc_hash,
         "previous_hash": previous_hash,
         "hash": block_hash
@@ -109,15 +107,32 @@ def create_block(kyc_hash):
     blockchain.append(block)
     save_blockchain(blockchain)
 
+# =====================================================
+# LOGGING FUNCTIONS
+# =====================================================
+def log_action(bank, action, kyc_hash):
+    log = {
+        "bank": bank,
+        "action": action,
+        "kyc_hash": kyc_hash,
+        "time": get_ist_timestamp()
+    }
+    audit_collection.insert_one(log)
 
-# ================= HOME =================
+def log_activity(action):
+    activity = {
+        "action": action,
+        "time": get_ist_timestamp()
+    }
+    activity_collection.insert_one(activity)
+
+# =====================================================
+# ROUTES
+# =====================================================
 @app.route('/')
 def home():
     return render_template("dashboard.html")
 
-
-# ================= BANK LOGIN =================
-# ================= BANK LOGIN =================
 @app.route("/bank_login", methods=["GET", "POST"])
 def bank_login():
     error = None
@@ -127,7 +142,6 @@ def bank_login():
         next_page = request.form.get("next")
         if bank_id == "admin" and password == "1234":
             session["bank_logged_in"] = True
-            # Redirect based on next_page
             if next_page == "view_kyc":
                 return redirect(url_for("kyc_records_table"))
             elif next_page == "kyc":
@@ -144,28 +158,19 @@ def bank_login():
         next_page = request.args.get("next")
     return render_template("bank_login.html", error=error, next_page=next_page)
 
-# ================= KYC RECORDS TABLE =================
 @app.route('/kyc_records')
 def kyc_records_table():
     if not session.get('bank_logged_in'):
         return redirect(url_for('bank_login', next='view_kyc'))
     log_activity("Viewed KYC records")
-
-    try:
-        kyc_records = list(kyc_collection.find({}, {"_id":0}))
-    except:
-        kyc_records = []
-
+    kyc_records = list(kyc_collection.find({}, {"_id":0}))
     return render_template('kyc_records.html', kyc_records=kyc_records)
 
-# ================= LOGOUT =================
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("dashboard"))
 
-
-# ================= KYC SUBMISSION =================
 @app.route("/kyc", methods=["GET", "POST"])
 def kyc():
     if not session.get("bank_logged_in"):
@@ -192,11 +197,10 @@ def kyc():
         if not photo or not pan_card or not address_proof:
             return render_template("kyc.html", error="All documents required!")
 
-        # create folder using KYC name
         user_folder_name = name.replace(" ", "_")
         user_folder = os.path.join(UPLOAD_FOLDER, user_folder_name)
-
         os.makedirs(user_folder, exist_ok=True)
+
         photo_filename = secure_filename(photo.filename)
         pan_filename = secure_filename(pan_card.filename)
         address_filename = secure_filename(address_proof.filename)
@@ -219,7 +223,7 @@ def kyc():
             "pan_card":pan_filename,
             "address_proof":address_filename,
             "hash":kyc_hash,
-            "timestamp":str(datetime.datetime.now())
+            "timestamp":get_ist_timestamp()
         }
 
         store_kyc(kyc_record)
@@ -229,7 +233,6 @@ def kyc():
 
     return render_template("kyc.html")
 
-
 # ================= VERIFY =================
 @app.route("/verify", methods=["GET","POST"])
 def verify():
@@ -237,7 +240,6 @@ def verify():
         return redirect(url_for("bank_login", next="verify"))
     log_activity("Opened Verify KYC Page")
     
-
     result=None
     verified=False
     photo_path=None
@@ -261,13 +263,11 @@ def verify():
 
     return render_template("verify.html",result=result,verified=verified,photo_path=photo_path)
 
-
 # ================= KYC SUCCESS =================
 @app.route("/kyc_success")
 def kyc_success():
     hash_value = request.args.get("hash")
     return render_template("kyc_success.html", hash=hash_value)
-
 
 # ================= BLOCKCHAIN VIEW =================
 @app.route("/blockchain")
@@ -279,74 +279,19 @@ def blockchain():
     blockchain = load_blockchain()
     return render_template("blockchain.html", blocks=blockchain)
 
-
 @app.route("/view_chain")
 def view_chain():
     return jsonify(load_blockchain())
 
-
-# ================= AUDIT LOG =================
-def log_action(bank, action, kyc_hash):
-
-    log = {
-        "bank": bank,
-        "action": action,
-        "kyc_hash": kyc_hash,
-        "time": str(datetime.datetime.now())
-    }
-
-    audit_collection.insert_one(log)
-
-
-
-    
-
-
-
-
-# ================= ACTIVITY LOG =================
-def log_activity(action):
-
-    activity = {
-        "action": action,
-        "time": str(datetime.datetime.now())
-    }
-
-    activity_collection.insert_one(activity)
-
-
-# ================= FEDERATED =================
-@app.route("/federated")
-def federated():
-    global_score,bank_scores=federated_aggregate()
-    return render_template("federated.html", global_score=round(global_score,3), bank_scores=bank_scores)
-
-
-# ================= VIEW AUDIT LOGS =================
-@app.route("/audit_logs")
-def audit_logs():
-    log_activity("Viewed Audit Logs")
-    logs = list(audit_collection.find({}, {"_id":0}))
-
-    return render_template("audit_logs.html", logs=logs)
-
-
-
 # ================= DASHBOARD =================
 @app.route("/dashboard")
 def dashboard():
-    # clear bank session when returning to dashboard
     session.pop("bank_logged_in", None)
-
     kyc_data = load_kyc()
     blockchain = load_blockchain()
-
     logs = list(audit_collection.find({}, {"_id":0}))
-
-    # LOAD ACTIVITY LOG
     activities = list(activity_collection.find({}, {"_id":0}).sort("time",-1))
     recent_activity = activities[:5]
-    
 
     return render_template(
         "dashboard.html",
@@ -355,6 +300,7 @@ def dashboard():
         total_logs=len(logs),
         recent_activity=recent_activity
     )
+
 @app.route('/federated_dashboard')
 def federated_dashboard():
     return render_template('federated_dashboard.html', clients=clients)
@@ -363,58 +309,47 @@ def federated_dashboard():
 def fl_round(round_num):
     client_updates = {client: random.uniform(0.5, 1.0) for client in clients}
     global_model = sum(client_updates.values()) / len(clients)
-
     return jsonify({
         'round': round_num,
         'client_updates': client_updates,
         'global_model': global_model
     })
 
-
 # ================= BLOCKCHAIN VALIDATION =================
 def validate_blockchain():
     chain = load_blockchain()
     kyc_records = load_kyc()
-
     for i in range(1, len(chain)):
         previous_block = chain[i - 1]
         current_block = chain[i]
-
         if current_block.get("previous_hash") != previous_block.get("hash"):
-            # Find the KYC record by hash
             kyc_hash = current_block.get("kyc_hash")
             kyc_name = None
             for record in kyc_records:
                 if record.get("hash") == kyc_hash:
                     kyc_name = record.get("name")
                     break
-
             return {
                 "status": False,
                 "tampered_index": current_block.get("index"),
                 "kyc_hash": kyc_hash,
                 "kyc_name": kyc_name
             }
-
-    # Blockchain is valid
     return {"status": True}
-
 
 @app.route("/check_blockchain")
 def check_blockchain():
     validation = validate_blockchain()
-
     if validation["status"]:
         message = "Blockchain Integrity Verified ✅"
         tampered = None
     else:
         tampered = validation
         message = f"Blockchain Tampering Detected ❌ at block index {tampered['tampered_index']} (KYC Name: {tampered['kyc_name']}, Hash: {tampered['kyc_hash']})"
-
     return render_template("blockchain_status.html", message=message, tampered=tampered)
 
-
 # ================= RUN =================
-
+# For Render, use gunicorn instead of app.run
+# Locally you can still run: python app.py
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
