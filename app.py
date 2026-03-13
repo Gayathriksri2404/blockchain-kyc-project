@@ -16,8 +16,11 @@ def now_ist():
     return datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
 
 # ==================== MONGODB ====================
-client = MongoClient("mongodb+srv://kycuser:kyc12345@cluster0.zgrfbcg.mongodb.net/?appName=Cluster0")
-db = client["kyc_database"]
+mongo_uri = os.getenv("MONGO_URI")  # Read from Render environment variables
+db_name = os.getenv("DB_NAME")
+client = MongoClient(mongo_uri)
+db = client[db_name]
+
 kyc_collection = db["kyc_data"]
 blockchain_collection = db["blockchain"]
 audit_collection = db["audit_logs"]
@@ -33,6 +36,7 @@ clients = ['Bank A', 'Bank B', 'Bank C']
 def load_blockchain():
     chain = list(blockchain_collection.find({}, {"_id":0}))
     if len(chain) == 0:
+        # Only insert one genesis block if collection is empty
         genesis_block = {
             "index": 1,
             "timestamp": now_ist(),
@@ -40,9 +44,9 @@ def load_blockchain():
             "previous_hash": "0",
             "hash": "GENESIS_HASH"
         }
-        chain.append(genesis_block)
         try:
-            blockchain_collection.insert_many(chain)
+            blockchain_collection.insert_one(genesis_block)
+            chain.append(genesis_block)
         except Exception as e:
             print("Error saving genesis block:", e)
     return chain
