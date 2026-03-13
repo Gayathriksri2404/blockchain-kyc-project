@@ -345,7 +345,7 @@ def dashboard():
 
     # LOAD ACTIVITY LOG
     activities = list(activity_collection.find({}, {"_id":0}).sort("time",-1))
-recent_activity = activities[:5]
+    recent_activity = activities[:5]
     
 
     return render_template(
