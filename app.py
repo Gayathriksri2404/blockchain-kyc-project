@@ -12,7 +12,7 @@ import pytz
 from pymongo import MongoClient
 
 # MongoDB connection
-client = MongoClient("mongodb+srv://kycuser:kyc123@cluster0.zgrfbcg.mongodb.net/kyc_database?retryWrites=true&w=majority")
+client = MongoClient("mongodb+srv://kycuser:kyc12345@cluster0.zgrfbcg.mongodb.net/kyc_database?retryWrites=true&w=majority")
 
 db = client["kyc_database"]
 
