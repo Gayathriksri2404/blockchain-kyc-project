@@ -1,16 +1,29 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import hashlib
-import datetime
 import random
 import json
 import os
 import re
 from federated import federated_aggregate
 from werkzeug.utils import secure_filename
+from datetime import datetime
+import pytz
+
+from pymongo import MongoClient
+
+# MongoDB connection
+client = MongoClient("mongodb+srv://kycuser:kyc123@cluster0.zgrfbcg.mongodb.net/kyc_database?retryWrites=true&w=majority")
+
+db = client["kyc_database"]
+
+kyc_collection = db["kyc_data"]
+
+client.admin.command('ping')
 
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
+ist = pytz.timezone('Asia/Kolkata')
 
 BLOCKCHAIN_FILE = "blockchain.json"
 KYC_FILE = "kyc_data.json"
@@ -57,7 +70,7 @@ def load_blockchain():
     if len(chain) == 0:
         genesis_block = {
             "index": 1,
-            "timestamp": str(datetime.datetime.now()),
+            "timestamp": datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S"),
             "kyc_hash": "GENESIS",
             "previous_hash": "0",
             "hash": "GENESIS_HASH"
@@ -74,16 +87,11 @@ def save_blockchain(chain):
 # KYC DATA
 # =====================================================
 def load_kyc():
-    if os.path.exists(KYC_FILE):
-        with open(KYC_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+    data = list(kyc_collection.find({}, {"_id":0}))
+    return data
 
 def store_kyc(data):
-    existing = load_kyc()
-    existing.append(data)
-    with open(KYC_FILE, "w", encoding="utf-8") as f:
-        json.dump(existing, f, indent=4)
+    kyc_collection.insert_one(data)
 
 # =====================================================
 # CREATE BLOCK
@@ -92,11 +100,11 @@ def create_block(kyc_hash):
     blockchain = load_blockchain()
     previous_block = blockchain[-1]
     previous_hash = previous_block["hash"]
-    block_string = str(len(blockchain)+1) + str(datetime.datetime.now()) + kyc_hash + previous_hash
+    block_string = str(len(blockchain)+1) + datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S") + kyc_hash + previous_hash
     block_hash = hashlib.sha256(block_string.encode()).hexdigest()
     block = {
         "index": len(blockchain) + 1,
-        "timestamp": str(datetime.datetime.now()),
+        "timestamp": datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S"),
         "kyc_hash": kyc_hash,
         "previous_hash": previous_hash,
         "hash": block_hash
@@ -145,8 +153,7 @@ def kyc_records_table():
     log_activity("Viewed KYC records")
 
     try:
-        with open('kyc_data.json', 'r') as f:
-            kyc_records = json.load(f)
+        kyc_records = list(kyc_collection.find({}, {"_id":0}))
     except:
         kyc_records = []
 
@@ -212,7 +219,7 @@ def kyc():
             "pan_card":pan_filename,
             "address_proof":address_filename,
             "hash":kyc_hash,
-            "timestamp":str(datetime.datetime.now())
+            "timestamp": datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
         }
 
         store_kyc(kyc_record)
@@ -284,7 +291,7 @@ def log_action(bank,action,kyc_hash):
         "bank":bank,
         "action":action,
         "kyc_hash":kyc_hash,
-        "time":str(datetime.datetime.now())
+        "time": datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
     }
     logs.append(log)
     with open(AUDIT_FILE,"w") as f:
@@ -305,7 +312,7 @@ def log_activity(action):
 
     activity = {
         "action": action,
-        "time": str(datetime.datetime.now())
+        "time": datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
     }
 
     activities.append(activity)
