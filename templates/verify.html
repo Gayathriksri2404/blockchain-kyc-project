@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bank B - KYC Verification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="kyc-body">
+
+    <div class="kyc-container">
+
+        <h1>🔍 Bank B - Verify Customer KYC</h1>
+        <p class="subtitle">Enter the KYC hash provided by the customer</p>
+
+        <form method="post" class="kyc-form">
+
+            <label>KYC Hash</label>
+            <input type="text"
+                   name="kyc_key"
+                   placeholder="Enter 64-character SHA-256 hash"
+                   required>
+
+            <button type="submit" class="kyc-btn">
+                Verify KYC
+            </button>
+
+        </form>
+
+        {% if result %}
+            <div class="result-box">
+                <h3>{{ result }}</h3>
+            </div>
+        {% endif %}
+
+        <!-- ✅ SHOW PHOTO ONLY WHEN VERIFIED -->
+        <!-- ✅ SHOW PHOTO ONLY WHEN VERIFIED -->
+    {% if verified and photo_path %}
+    <div class="photo-box">
+        <h3>📸 Customer Photo</h3>
+        <img src="{{ url_for('uploaded_file', filename=photo_path) }}" width="200" alt="KYC Photo">
+    </div>
+    {% endif %}
+
+        <div class="back-link">
+             <a href="{{ url_for('dashboard') }}" class="btn">⬅ Back to Dashboard</a>
+        </div>
+    </div>
+
+</body>
+
+
+</html>

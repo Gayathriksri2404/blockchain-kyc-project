@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Admin Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+    }
+
+    .login-container {
+        width: 360px;
+        padding: 30px;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    label {
+        font-size: 14px;
+        color: #ddd;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        margin-bottom: 18px;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+        background: rgba(255,255,255,0.15);
+        color: white;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+    }
+
+    .error {
+        color: #ff6b6b;
+        text-align: center;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+</style>
+
+
+</head>
+
+<body>
+
+<div class="login-container">
+    <h1>🏦 Bank Admin Login</h1>
+
+
+<form method="POST">
+
+    <input type="hidden" name="next" value="{{ next_page }}">
+
+    <label>Bank ID</label>
+    <input type="text" name="bank_id" required>
+
+    <label>Password</label>
+    <input type="password" name="password" required>
+
+    <button type="submit">Login</button>
+
+</form>
+
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+
+
+</div>
+
+</body>
+</html>

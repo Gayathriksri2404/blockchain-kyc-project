@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KYC Success</title>
+</head>
+<body>
+
+<h2>KYC Completed Successfully</h2>
+
+{% if hash %}
+    <p><b>Your KYC Hash:</b></p>
+    <p style="color:green;">{{ hash }}</p>
+{% endif %}
+
+<br>
+<a href="/kyc">
+    <button>Do New KYC</button>
+</a>
+
+<a href="/dashboard">
+    <button>⬅ Back to Dashboard</button>
+</a>
+
+</body>
+</html>

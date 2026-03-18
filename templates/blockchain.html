@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blockchain Ledger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f172a; /* BLACK/DARK BACKGROUND */
+            color: #e5e7eb;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #3b82f6; /* BLUE HEADING */
+            margin-bottom: 30px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 95%;
+            margin: auto;
+            background-color: #111827;
+            box-shadow: 0 0 10px rgba(0,0,0,0.6);
+        }
+
+        th, td {
+            border: 1px solid #374151;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #1f2937; /* TABLE HEADER COLOR */
+            color: #60a5fa;            /* HEADER TEXT COLOR */
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #0b1220;
+        }
+
+        tr:hover {
+            background-color: #1e293b;
+        }
+
+        td {
+            color: #e5e7eb;
+        }
+
+        .timestamp {
+            color: #facc15; /* YELLOW — clearly visible */
+            font-weight: 500;
+        }
+
+        .hash {
+            word-break: break-all;
+            color: #22c55e; /* GREEN HASH */
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        p {
+            text-align: center;
+            color: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+
+<h2>KYC Blockchain Records</h2>
+
+{% if blocks %}
+<table>
+    <tr>
+        <th>Index</th>
+        <th>Timestamp</th>
+        <th>KYC Hash</th>
+    </tr>
+
+    {% for block in blocks %}
+    <tr>
+        <td>{{ block.index }}</td>
+        <td class="timestamp">{{ block.timestamp }}</td>
+        <td class="hash">{{ block.hash }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No KYC records yet.</p>
+{% endif %}
+
+</body>
+
+<a href="{{ url_for('dashboard') }}">
+    <button style="padding:10px 15px; background:#007bff; color:white; border:none; border-radius:5px;">
+        ⬅ Back to Dashboard
+    </button>
+</a>
+</html>

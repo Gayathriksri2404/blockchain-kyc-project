@@ -1,0 +1,166 @@
+<!-- templates/federated_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federated Learning Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #0f0;
+        }
+        h1 {
+            color: #0f0;
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #0f0;
+            margin-bottom: 30px;
+        }
+        .dashboard-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            padding: 0 20px;
+        }
+        .card {
+            background: #111;
+            border: 2px solid #0f0;
+            border-radius: 12px;
+            padding: 15px 20px;
+            width: 280px;
+            box-shadow: 0 0 15px #0f0a;
+            transition: transform 0.3s;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card h2 { margin-top: 0; font-size: 1.2rem; color: #0f0; }
+        .status { font-weight: bold; margin: 10px 0; }
+        .progress-bar-container {
+            background: #222;
+            width: 100%;
+            height: 18px;
+            border-radius: 10px;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            height: 18px;
+            border-radius: 10px;
+            width: 0%;
+            background: #0f0;
+            transition: width 1s ease;
+        }
+        .server-card {
+            width: 650px;
+        }
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+            background: #111;
+            border: 1px solid #0f0;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Federated Learning Dashboard</h1>
+
+<div class="dashboard-container">
+    {% for client in clients %}
+    <div class="card">
+        <h2>{{ client }}</h2>
+        <div class="status">Status: <span id="{{ client }}_status">Waiting...</span></div>
+        <div class="progress-bar-container">
+            <div id="{{ client }}_progress" class="progress-bar"></div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="card server-card">
+        <h2>Central Server</h2>
+        <div>Training Round: <span id="round_num">0</span></div>
+        <div>Global Accuracy: <span id="global_acc">Loading...</span></div>
+        <div class="progress-bar-container">
+            <div id="global_progress" class="progress-bar"></div>
+        </div>
+        <canvas id="accuracyChart"></canvas>
+    </div>
+</div>
+
+<script>
+let round_counter = 0;
+let chartData = {
+    labels: [],
+    datasets: [
+        { label: 'BankA', data: [], borderColor: '#0f0', fill: false, tension: 0.3 },
+        { label: 'BankB', data: [], borderColor: '#0ff', fill: false, tension: 0.3 },
+        { label: 'BankC', data: [], borderColor: '#ff0', fill: false, tension: 0.3 },
+        { label: 'Global', data: [], borderColor: '#f0f', fill: false, tension: 0.3 },
+    ]
+};
+
+const ctx = document.getElementById('accuracyChart').getContext('2d');
+const accuracyChart = new Chart(ctx, {
+    type: 'line',
+    data: chartData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#0f0' } }
+        },
+        scales: {
+            x: { ticks: { color: '#0f0' }, grid: { color: '#0f03' } },
+            y: { 
+                min: 0.99,       // Zoomed-in range
+                max: 1.0,
+                ticks: { color: '#0f0', stepSize: 0.001 },
+                grid: { color: '#0f03' } 
+            }
+        }
+    }
+});
+
+function updateFederatedData() {
+    fetch("/federated_accuracy")
+        .then(response => response.json())
+        .then(data => {
+            round_counter += 1;
+            document.getElementById("round_num").innerText = round_counter;
+            document.getElementById("global_acc").innerText = data.global_accuracy.toFixed(4);
+
+            const bankKeys = Object.keys(data.bank_results);
+            let delay = 0;
+            bankKeys.forEach(bank => {
+                const acc = data.bank_results[bank];
+                setTimeout(() => {
+                    document.getElementById(bank + "_status").innerText = "Accuracy: " + acc.toFixed(4);
+                    document.getElementById(bank + "_progress").style.width = (acc*100).toFixed(2) + "%";
+                }, delay);
+                delay += 500;
+            });
+
+            setTimeout(() => {
+                document.getElementById("global_progress").style.width = (data.global_accuracy*100).toFixed(2) + "%";
+            }, delay);
+
+            // Update chart without fill
+            chartData.labels.push(round_counter);
+            chartData.datasets[0].data.push(data.bank_results.BankA);
+            chartData.datasets[1].data.push(data.bank_results.BankB);
+            chartData.datasets[2].data.push(data.bank_results.BankC);
+            chartData.datasets[3].data.push(data.global_accuracy);
+            accuracyChart.update();
+        })
+        .catch(err => console.error("Error fetching federated data:", err));
+}
+
+// Initial call
+updateFederatedData();
+setInterval(updateFederatedData, 3000);
+</script>

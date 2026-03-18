@@ -1,0 +1,15 @@
+<h2>Blockchain Status</h2>
+
+<h2>{{ message }}</h2>
+
+{% if tampered %}
+    <p>🔹 Block Index: {{ tampered.tampered_index }}</p>
+    <p>🔹 KYC Name: {{ tampered.kyc_name }}</p>
+    <p>🔹 Hash: {{ tampered.kyc_hash }}</p>
+{% endif %}
+
+<br>
+
+<a href="{{ url_for('dashboard') }}">
+     <button>⬅ Back to Dashboard</button>
+</a>
